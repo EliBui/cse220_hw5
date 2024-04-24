@@ -84,21 +84,21 @@ init_student_array:
 	sw $s4, 4($sp)		# save $s4 on stack
 	sw $s5, 0($sp)		# save $s5 on stack
 	
-	# transfer $a to $t
+	# transfer $a to $s
 	move $s0, $a0
 	move $s1, $a1
 	move $s2, $a2
 	move $s3, $a3
 	
 	# get address of records and put it on $s4
-	move $s4, $sp
+	lw $s4, 28($sp) # records should be at the top of the stack
 	
 	# initialize a counter at $s5
 	li $s5, 0
 	
+	beqz $s0, recordDone	# break if num_students == 0
+	
 	loopRecord:
-		beqz $s0, recordDone	# break if num_students == 0
-
 		# calculate offset and store in $t0
 		sll $t0, $s5, 2 	# $t0 = counter * 4
 		
@@ -121,8 +121,8 @@ init_student_array:
 		move $a3, $t1
 		
 		jal init_student	# call init_student
-		move $a0, $a3
-		jal print_student
+		#move $a0, $a3
+		#jal print_student
 		
 		addi $s5, $s5, 1	# increment counter i++
 		
