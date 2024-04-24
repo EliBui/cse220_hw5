@@ -149,6 +149,57 @@ init_student_array:
 	jr $ra
 	
 insert:
+	# $a0 = struct student *record
+	# $a1 = struct student *table[]
+	# $a2 = int table_size
+	
+	# calculate index
+	lw $t0, 0($a0)		# $t0 contains bytes 0-3 of record
+	srl $t0, $t0, 10	# $t0 now contains only id
+	div $t0, $a2		# divivde id by table size
+	mfhi $t0		# get remainder (index) and store in $t0
+	
+	# calculate index offset
+	sll $t0, $t0, 2		# multiply index by 4 to get offset 
+	add $t1, $a1, $t0	# $t1 contains address of index to be inserted
+	
+	# calculate max address of table
+	addi $t2, $a2, -1	# $t2 now has table size - 1
+	sll $t2, $t2, 2		# multiply table size by 4 to get offset of last location
+	add $t2, $t2, $a1	# $t2 contains address of last location
+	
+	# store starting address in $t3
+	move $t3, $t1
+	li $t5, -1 # load -1 into $t5
+	
+	while: #loops until empty spot is found or complete a full rotation
+		lw $t4, 0($t1) 			# $t4 contains value of table location
+		beqz $t4, insert_to_table	# empty spot found, insert to table 
+		beq $t4, $t5 insert_to_table	# tombstone found, insert to table
+		
+		addi $t1, $t1, 4	# increment to the next table address
+		ble $t1, $t2, skip 	# skip over the loop around if $t1 is not greater than max address
+		
+		# this code is reached if $t1 is greater than max address
+		move $t1, $a1 		# move $t1 back to first address of table
+		
+		skip:
+		beq $t1, $t3 no_space 	# no empty space found (we reached our starting address)
+		j while
+														
+	insert_to_table:
+		sw $a0, 0($t1) # write address of record to $t1
+		
+		# load the index to $v0
+		sub $t1, $t1, $a1 	# subtract inserted address from address of first location
+		srl $t1, $t1, 2		# divide by 2 to get index from offset
+		move $v0, $t1
+		j exit
+	
+	no_space:
+		li $v0, -1 	# no space in table, return -1
+	
+	exit:
 	jr $ra
 	
 search:
