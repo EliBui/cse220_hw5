@@ -96,9 +96,9 @@ init_student_array:
 	# initialize a counter at $s5
 	li $s5, 0
 	
-	beqz $s0, recordDone	# break if num_students == 0
+	beqz $s0, record_done	# break if num_students == 0
 	
-	loopRecord:
+	loop_record:
 		# calculate offset and store in $t0
 		sll $t0, $s5, 2 	# $t0 = counter * 4
 		
@@ -121,23 +121,21 @@ init_student_array:
 		move $a3, $t1
 		
 		jal init_student	# call init_student
-		#move $a0, $a3
-		#jal print_student
 		
 		addi $s5, $s5, 1	# increment counter i++
 		
-		beq $s0, $s5, recordDone # break if num_students == counter
+		beq $s0, $s5, record_done # break if num_students == counter
 		
 		# if not all students are initialized, then move on to next name
-		loopName:
+		loop_name:
 			lb $t1, 0($s3)
-			beqz $t1, nameDone # exit loop if null
+			beqz $t1, name_done # exit loop if null
 			addi $s3, $s3, 1 # next char
-			j loopName
-		nameDone:
+			j loop_name
+		name_done:
 		addi $s3, $s3, 1 	# skip \0
-		j loopRecord
-	recordDone:
+		j loop_record
+	record_done:
 	lw $s5, 0($sp)		# restore $s5 from stack
 	lw $s4, 4($sp)		# restore $s4 from stack
 	lw $s3, 8($sp)		# restore $s3 from stack
@@ -172,37 +170,95 @@ insert:
 	move $t3, $t1
 	li $t5, -1 # load -1 into $t5
 	
-	while: #loops until empty spot is found or complete a full rotation
+	while_insert: #loops until empty spot is found or complete a full rotation
 		lw $t4, 0($t1) 			# $t4 contains value of table location
 		beqz $t4, insert_to_table	# empty spot found, insert to table 
 		beq $t4, $t5 insert_to_table	# tombstone found, insert to table
 		
 		addi $t1, $t1, 4	# increment to the next table address
-		ble $t1, $t2, skip 	# skip over the loop around if $t1 is not greater than max address
+		ble $t1, $t2, skip1 	# skip over the loop around if $t1 is not greater than max address
 		
 		# this code is reached if $t1 is greater than max address
 		move $t1, $a1 		# move $t1 back to first address of table
 		
-		skip:
+		skip1:
 		beq $t1, $t3 no_space 	# no empty space found (we reached our starting address)
-		j while
+		j while_insert
 														
 	insert_to_table:
 		sw $a0, 0($t1) # write address of record to $t1
 		
 		# load the index to $v0
 		sub $t1, $t1, $a1 	# subtract inserted address from address of first location
-		srl $t1, $t1, 2		# divide by 2 to get index from offset
+		srl $t1, $t1, 2		# divide by 4 to get index from offset
 		move $v0, $t1
-		j exit
+		j exit1
 	
 	no_space:
 		li $v0, -1 	# no space in table, return -1
 	
-	exit:
+	exit1:
 	jr $ra
 	
 search:
+	# $a0 = int id
+	# $a1 = struct student *table[]
+	# $a2 = int table_size
+	
+	# calculate index
+	move $t0, $a0 	# move id to $t0
+	div $t0, $a2	# divide id by table size
+	mfhi $t0	# get remainder (index) and store in $t0
+	
+	# calculate offset
+	sll $t0, $t0, 2   # multiply index by 4 to get offset
+	add $t0, $t0, $a1 # $t0 now contains the address of the first location we're checking
+	
+	# calculate max address of table
+	addi $t1, $a2, -1 # $t1 now contains table size - 1
+	sll $t1, $t1, 2	  # multiply by 4 to get offset from beginning of table
+	add $t1, $t1, $a1 # $t1 now holds address of the last location of the table
+	
+	# store starting address in $t2
+	move $t2, $t0
+	li $t3, -1 # load -1 into $t3
+	
+	while_search:
+		lw $t4, 0($t0) 		# $t4 contains the address of record of the current table location
+		beq $t4, $t3, increment # increment to next location if $t4 is a tombstone
+		beqz $t4, increment	# increment to next location if $t4 is empty
+		lw $t4, 0($t4) 		# $t4 now contains the value of the record
+		
+		# extract the id of current address
+		srl $t4, $t4, 10 # shift right by 10 so $t4 now only store id
+		
+		beq $t4, $a0, record_found # found the record
+		
+		increment:
+		addi $t0, $t0, 4    # increment to th next address of the table
+		ble $t0, $t1, skip2 # skip over loop around if $t0 is not greater than max address
+		
+		# this code is reach if $t0 is greater than max address
+		move $t0, $a1 # move $t0 back to beginning of table
+		
+		skip2:
+		beq $t0, $t2, no_record # $t0 is back where we started
+		j while_search
+	
+	record_found:
+		lw $v0, 0($t0) # load address of record to $v0
+		
+		# get index
+		sub $t0, $t0, $a1 # subtract $t0 from starting address of table
+		srl $t0, $t0, 2	  # divide by 4 to get index from offset
+		move $v1, $t0	  # load index to $v1
+		j exit2
+	
+	no_record:
+		li $v0, 0  # load 0 into $v0 if no record found
+		li $v1, -1 # load -1 into $v1 if no record found
+	
+	exit2:
 	jr $ra
 
 delete:
