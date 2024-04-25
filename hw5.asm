@@ -262,4 +262,29 @@ search:
 	jr $ra
 
 delete:
+	# $a0 = int id
+	# $a1 = struct student *table[]
+	# $a2 = int table_size
+	
+	addi $sp, $sp, -4 # allocate space on stack
+	sw $ra, 0($sp)	  # save $ra on stack
+	
+	jal search
+	
+	# move index/-1 from $v1 to $v0
+	move $v0, $v1
+	
+	li $t0, -1
+	beq $v0, $t0, exit3 # return if $v0 is -1
+	
+	# calculate offset 
+	move $t1, $v0   # copy $v0 to $t1
+	sll $t1, $t1, 2 # mutliply index by 4 to get offset
+	
+	add $a1, $a1, $t1 # add offset to starting address of table to get to target address
+	sw $t0, 0($a1) 	  # write -1 to target address	
+	
+	exit3:
+	lw $ra, 0($sp)	  # restore $ra from stack
+	addi $sp, $sp, 4  # deallocate space on stack
 	jr $ra
