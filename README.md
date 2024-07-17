@@ -1,12 +1,14 @@
 CSE 220 Homework 5  
-Upwords variant in C
+Student record keeping in Assembly
 
 Full homework description here:
-https://docs.google.com/document/d/1M6x8C2SmJBv1Rlv6q5zIsFlyvhlXQqB8Dqz9iqVtRWw/edit?usp=sharing
+https://docs.google.com/document/d/1KHF8Uuy-nbFkVT7vs60wOcllmu5YWKkN7-PaAPA9cwI/edit?usp=sharing
 
 Learning Outcomes:
-
-An ability to properly manage memory by allocating and deallocating blocks of memory.
-An ability to work with simple structs.
+- Perform memory, arithmetic, and bitwise operations.
+- Iterate through strings and arrays using loops.
+- Implement functions and follow proper register conventions.
+- implement basic data structures.
+  
 The code I wrote for this assignment can be found in cse220_hw3/src/ and cse220_hw3/include/
 All other files were given by the instructor as part of the assignment template
